@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>CubePlay Arcade — 15 Games</title>
+<style>
+  :root{
+    --bg: #0E1024;
+    --bg-2: #131634;
+    --surface: #171A37;
+    --surface-2: #1F2347;
+    --surface-3: #272C58;
+    --line: #2B2F5C;
+    --lime: #B6FF3C;
+    --lime-dim: #8FD92A;
+    --coral: #FF5C72;
+    --sky: #4FD2FF;
+    --gold: #FFC857;
+    --text-hi: #F5F7FF;
+    --text-lo: #9098C2;
+    --text-faint: #5B6094;
+    --font-display: 'Arial Black', Arial, "Segoe UI", sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: 'Consolas', 'SF Mono', Menlo, monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(ellipse at top, var(--bg-2) 0%, var(--bg) 60%);
+    color: var(--text-hi);
+    font-family: var(--font-body);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  a{color:inherit;}
+  button{font-family:inherit;}
+  :focus-visible{outline:3px solid var(--sky); outline-offset:2px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px;
+    position:sticky; top:0; z-index:40;
+    background: rgba(14,16,36,0.85);
+    backdrop-filter: blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--font-display);
+    font-size:22px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+  }
+  .logo .mark{
+    width:30px;height:30px;
+    background: linear-gradient(145deg, var(--lime), var(--sky));
+    border-radius:6px;
+    box-shadow: 3px 3px 0 var(--surface-3), -1px -1px 0 rgba(255,255,255,0.25) inset;
+    transform: rotate(-6deg);
+    display:inline-block;
+  }
+  .logo .play{color:var(--lime);}
+  .topbar-stats{
+    display:flex; gap:18px; align-items:center;
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--text-lo);
+  }
+  .topbar-stats b{color:var(--gold); font-weight:700;}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding:64px 28px 40px;
+    text-align:center;
+    position:relative;
+  }
+  .hero-cubes{
+    display:flex; justify-content:center; gap:14px;
+    margin-bottom:28px;
+    perspective:600px;
+  }
+  .cube{
+    width:38px;height:38px;
+    border-radius:7px;
+    animation: floaty 3.2s ease-in-out infinite;
+    box-shadow: 0 10px 18px -8px rgba(0,0,0,0.6);
+  }
+  .cube:nth-child(1){background:var(--lime); animation-delay:0s;}
+  .cube:nth-child(2){background:var(--coral); animation-delay:0.4s;}
+  .cube:nth-child(3){background:var(--sky); animation-delay:0.8s;}
+  .cube:nth-child(4){background:var(--gold); animation-delay:1.2s;}
+  .cube:nth-child(5){background:var(--lime); animation-delay:1.6s;}
+  @keyframes floaty{
+    0%,100%{transform:translateY(0) rotate(0deg);}
+    50%{transform:translateY(-16px) rotate(8deg);}
+  }
+  .hero h1{
+    font-family:var(--font-display);
+    font-size:clamp(32px, 6vw, 58px);
+    letter-spacing:1px;
+    text-transform:uppercase;
+    margin:0 0 14px;
+    line-height:1.05;
+  }
+  .hero h1 span{color:var(--lime);}
+  .hero p{
+    color:var(--text-lo);
+    font-size:17px;
+    max-width:560px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+
+  /* ---------- Hub grid ---------- */
+  .hub{
+    max-width:1180px;
+    margin:0 auto;
+    padding:10px 28px 80px;
+  }
+  .hub-label{
+    font-family:var(--font-mono);
+    color:var(--text-faint);
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    margin:0 0 18px 4px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(200px,1fr));
+    gap:18px;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px 18px;
+    cursor:pointer;
+    position:relative;
+    text-align:left;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(140deg, var(--accent, var(--lime)) 0%, transparent 55%);
+    opacity:0.08;
+    pointer-events:none;
+  }
+  .card:hover, .card:focus-visible{
+    transform:translateY(-4px);
+    border-color: var(--accent, var(--lime));
+    box-shadow: 0 14px 26px -14px var(--accent, var(--lime));
+  }
+  .card .icon{
+    width:46px;height:46px;
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:24px;
+    background: var(--surface-2);
+    box-shadow: 2px 2px 0 var(--surface-3);
+    margin-bottom:14px;
+  }
+  .card h3{
+    margin:0 0 4px;
+    font-size:17px;
+    font-weight:800;
+  }
+  .card .genre{
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--accent, var(--lime));
+  }
+  .card .play-btn{
+    margin-top:14px;
+    font-size:12px;
+    font-weight:700;
+    color:var(--text-lo);
+    display:flex; align-items:center; gap:6px;
+  }
+  .card:hover .play-btn{color:var(--text-hi);}
+
+  /* ---------- Stage (game view) ---------- */
+  .stage{
+    display:none;
+    min-height:100vh;
+    flex-direction:column;
+  }
+  .stage.active{display:flex;}
+  .hub.hidden{display:none;}
+  .stage-header{
+    display:flex; align-items:center; gap:14px;
+    padding:14px 22px;
+    border-bottom:1px solid var(--line);
+    background:var(--surface);
+    flex-wrap:wrap;
+  }
+  .back-btn{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text-hi);
+    padding:9px 14px;
+    border-radius:9px;
+    cursor:pointer;
+    font-weight:700;
+    font-size:13px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .back-btn:hover{border-color:var(--sky);}
+  .stage-title{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-size:18px;
+    letter-spacing:0.5px;
+  }
+  .stage-meta{
+    margin-left:auto;
+    display:flex; gap:16px;
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--text-lo);
+  }
+  .stage-meta b{color:var(--lime);}
+  .stage-body{
+    flex:1;
+    display:flex; flex-direction:column; align-items:center;
+    padding:22px 16px 40px;
+    gap:14px;
+  }
+  .game-canvas{
+    background:#06070F;
+    border-radius:12px;
+    border:1px solid var(--line);
+    touch-action:none;
+    max-width:100%;
+  }
+  .hint{
+    color:var(--text-faint);
+    font-size:13px;
+    text-align:center;
+    max-width:480px;
+  }
+  .overlay-msg{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px;
+    background:rgba(6,7,15,0.82);
+    border-radius:12px;
+    text-align:center;
+    padding:20px;
+  }
+  .overlay-msg h2{font-family:var(--font-display); margin:0; font-size:24px; text-transform:uppercase;}
+  .overlay-msg p{color:var(--text-lo); margin:0; font-size:14px;}
+  .game-wrap{position:relative; display:inline-block;}
+
+  .btn{
+    background:var(--lime);
+    color:#0E1024;
+    border:none;
+    padding:11px 22px;
+    border-radius:9px;
+    font-weight:800;
+    cursor:pointer;
+    font-size:14px;
+    box-shadow:0 6px 0 var(--lime-dim);
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 3px 0 var(--lime-dim);}
+  .btn.secondary{background:var(--surface-2); color:var(--text-hi); box-shadow:0 6px 0 var(--surface-3); border:1px solid var(--line);}
+
+  /* ---------- Touch pad ---------- */
+  .pad{
+    display:flex; gap:10px; align-items:center; justify-content:center;
+    margin-top:6px;
+    user-select:none;
+  }
+  .pad-cluster{display:grid; grid-template-columns:50px 50px 50px; grid-template-rows:50px 50px; gap:6px;}
+  .pad-btn{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text-hi);
+    border-radius:10px;
+    font-size:20px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .pad-btn:active{background:var(--surface-3);}
+  .action-btn{
+    width:84px; height:84px; border-radius:50%;
+    background:var(--coral); color:#fff; font-weight:800; font-size:13px;
+    border:none; cursor:pointer; text-transform:uppercase;
+    box-shadow:0 6px 0 #c23e52;
+  }
+  .action-btn:active{transform:translateY(4px); box-shadow:0 2px 0 #c23e52;}
+
+  @media (hover:hover) and (pointer:fine){
+    .pad.touch-only{display:none;}
+  }
+
+  /* ---------- Generic DOM-game widgets ---------- */
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+    max-width:480px;
+    width:100%;
+  }
+  .row{display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap;}
+  .statbar{height:10px; border-radius:6px; background:var(--surface-3); overflow:hidden;}
+  .statbar i{display:block; height:100%; border-radius:6px;}
+
+  footer{
+    text-align:center;
+    color:var(--text-faint);
+    font-size:12px;
+    padding:24px;
+    font-family:var(--font-mono);
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="mark"></span>CUBE<span class="play">PLAY</span></div>
+  <div class="topbar-stats">
+    <span>GAMES <b>15</b></span>
+    <span>SESSION SCORE <b id="globalScore">0</b></span>
+  </div>
+</div>
+
+<div id="hub" class="hub-wrap">
+  <div class="hero">
+    <div class="hero-cubes">
+      <div class="cube"></div><div class="cube"></div><div class="cube"></div><div class="cube"></div><div class="cube"></div>
+    </div>
+    <h1>Pick a world.<br><span>Press play.</span></h1>
+    <p>15 original block-built mini games — obbies, escapes, tycoons and more — all running right in your browser. No install, no install, just click and play.</p>
+  </div>
+  <div class="hub">
+    <div class="hub-label">// Game Library</div>
+    <div class="grid" id="gameGrid"></div>
+  </div>
+  <footer>Built for one player at a time · scores reset each session</footer>
+</div>
+
+<div id="stage" class="stage">
+  <div class="stage-header">
+    <button class="back-btn" id="backBtn">← Back to Library</button>
+    <div class="stage-title" id="stageTitle">Game</div>
+    <div class="stage-meta" id="stageMeta"></div>
+  </div>
+  <div class="stage-body" id="stageBody"></div>
+</div>
+
+<script>
+/* =========================================================
+   CORE: registry, navigation, shared utilities
+   ========================================================= */
+const GAMES = {}; // id -> { title, icon, genre, accent, blurb, init(ctx) -> cleanup fn }
+let activeGame = null;
+let activeCleanup = null;
+let globalScore = 0;
+
+function addGlobalScore(n){
+  globalScore += n;
+  document.getElementById('globalScore').textContent = globalScore;
+}
+
+function registerGame(id, def){ GAMES[id] = def; }
+
+function buildHub(){
+  const grid = document.getElementById('gameGrid');
+  grid.innerHTML = '';
+  Object.keys(GAMES).forEach(id => {
+    const g = GAMES[id];
+    const card = document.createElement('button');
+    card.className = 'card';
+    card.style.setProperty('--accent', g.accent || 'var(--lime)');
+    card.innerHTML = `
+      <div class="icon">${g.icon}</div>
+      <h3>${g.title}</h3>
+      <div class="genre">${g.genre}</div>
+      <div class="play-btn">▶ PLAY NOW</div>
+    `;
+    card.addEventListener('click', () => openGame(id));
+    grid.appendChild(card);
+  });
+}
+
+function openGame(id){
+  const g = GAMES[id];
+  if(!g) return;
+  activeGame = id;
+  document.getElementById('hub').classList.add('hidden');
+  document.getElementById('stage').classList.add('active');
+  document.getElementById('stageTitle').textContent = g.title;
+  document.getElementById('stageMeta').innerHTML = '';
+  const body = document.getElementById('stageBody');
+  body.innerHTML = '';
+  try{
+    activeCleanup = g.init(body, setMeta) || null;
+  }catch(e){
+    console.error(e);
+    body.innerHTML = '<p class="hint">This game hit an error loading. Try Back and reopen it.</p>';
+  }
+}
+
+function setMeta(html){
+  document.getElementById('stageMeta').innerHTML = html;
+}
+
+function closeGame(){
+  if(activeCleanup) { try{ activeCleanup(); }catch(e){} }
+  activeCleanup = null;
+  activeGame = null;
+  document.getElementById('stage').classList.remove('active');
+  document.getElementById('hub').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+document.getElementById('backBtn').addEventListener('click', closeGame);
+
+/* ---------- shared helpers for canvas games ---------- */
+function rand(min,max){ return Math.random()*(max-min)+min; }
+function randInt(min,max){ return Math.floor(rand(min,max+1)); }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+function makeCanvas(width, height){
+  const wrap = document.createElement('div');
+  wrap.className = 'game-wrap';
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  canvas.className = 'game-canvas';
+  canvas.style.width = Math.min(width, 520) + 'px';
+  canvas.style.height = (Math.min(width,520) * (height/width)) + 'px';
+  wrap.appendChild(canvas);
+  return { wrap, canvas, ctx: canvas.getContext('2d') };
+}
+
+function makeOverlay(wrap){
+  const ov = document.createElement('div');
+  ov.className = 'overlay-msg';
+  ov.style.display = 'none';
+  wrap.appendChild(ov);
+  return ov;
+}
+
+function showOverlay(ov, title, msg, btnLabel, onClick){
+  ov.innerHTML = `<h2>${title}</h2><p>${msg}</p>`;
+  const btn = document.createElement('button');
+  btn.className = 'btn';
+  btn.textContent = btnLabel;
+  btn.addEventListener('click', onClick);
+  ov.appendChild(btn);
+  ov.style.display = 'flex';
+}
+function hideOverlay(ov){ ov.style.display = 'none'; }
+
+/* keyboard state tracker, auto-scoped per game via cleanup */
+function makeKeys(){
+  const keys = {};
+  const down = e => { keys[e.key.toLowerCase()] = true; };
+  const up = e => { keys[e.key.toLowerCase()] = false; };
+  window.addEventListener('keydown', down);
+  window.addEventListener('keyup', up);
+  keys._cleanup = () => {
+    window.removeEventListener('keydown', down);
+    window.removeEventListener('keyup', up);
+  };
+  return keys;
+}
+
+/* directional touch pad -> sets keys object flags, for mobile */
+function makeDPad(container, keys, opts={}){
+  const pad = document.createElement('div');
+  pad.className = 'pad touch-only';
+  const cluster = document.createElement('div');
+  cluster.className = 'pad-cluster';
+  const map = [
+    ['', 'up', ''],
+    ['left', 'down', 'right']
+  ];
+  const labels = {up:'▲',down:'▼',left:'◀',right:'▶'};
+  map.forEach(rowArr => rowArr.forEach(dir => {
+    const b = document.createElement('div');
+    if(!dir){ cluster.appendChild(b); return; }
+    b.className = 'pad-btn';
+    b.textContent = labels[dir];
+    const setOn = (v) => { keys[dir] = v; };
+    b.addEventListener('touchstart', e=>{e.preventDefault(); setOn(true);}, {passive:false});
+    b.addEventListener('touchend', e=>{e.preventDefault(); setOn(false);}, {passive:false});
+    b.addEventListener('mousedown', ()=> setOn(true));
+    b.addEventListener('mouseup', ()=> setOn(false));
+    b.addEventListener('mouseleave', ()=> setOn(false));
+    cluster.appendChild(b);
+  }));
+  pad.appendChild(cluster);
+  if(opts.action){
+    const ab = document.createElement('button');
+    ab.className = 'action-btn';
+    ab.textContent = opts.action;
+    ab.addEventListener('touchstart', e=>{e.preventDefault(); keys[opts.actionKey]=true; setTimeout(()=>keys[opts.actionKey]=false,80); opts.onAction && opts.onAction();});
+    ab.addEventListener('mousedown', ()=>{keys[opts.actionKey]=true; setTimeout(()=>keys[opts.actionKey]=false,80); opts.onAction && opts.onAction();});
+    pad.appendChild(ab);
+  }
+  container.appendChild(pad);
+  return pad;
+}
+
+/* =========================================================
+   GAME 1 — Block Blitz (Snake)
+   ========================================================= */
+registerGame('snake', {
+  title:'Block Blitz', icon:'🟩', genre:'Classic · Snake', accent:'var(--lime)',
+  init(container, setMeta){
+    const cols=20, rows=20, cell=22;
+    const {wrap, canvas, ctx} = makeCanvas(cols*cell, rows*cell);
+    const overlay = makeOverlay(wrap);
+    container.appendChild(wrap);
+    const hint = document.createElement('p');
+    hint.className='hint';
+    hint.textContent='Arrow keys / WASD to move. Eat the gold block, avoid your own tail.';
+    container.appendChild(hint);
+    const keys = makeKeys();
+    makeDPad(container, keys);
+
+    let snake, dir, nextDir, food, score, alive, speedMs, timer;
+
+    function place(){
+      while(true){
+        const p = {x:randInt(0,cols-1), y:randInt(0,rows-1)};
+        if(!snake.some(s=>s.x===p.x&&s.y===p.y)) return p;
+      }
+    }
+    function reset(){
+      snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+      dir = {x:1,y:0}; nextDir = dir;
+      food = place();
+      score = 0; alive = true; speedMs = 130;
+      setMeta(`SCORE <b>0</b>`);
+      hideOverlay(overlay);
+      restartTimer();
+    }
+    function restartTimer(){
+      if(timer) clearInterval(timer);
+      timer = setInterval(tick, speedMs);
+    }
+    function tick(){
+      if(!alive) return;
+      if((keys['arrowup']||keys['w']) && dir.y===0) nextDir={x:0,y:-1};
+      if((keys['arrowdown']||keys['s']) && dir.y===0) nextDir={x:0,y:1};
+      if((keys['arrowleft']||keys['a']) && dir.x===0) nextDir={x:-1,y:0};
+      if((keys['arrowright']||keys['d']) && dir.x===0) nextDir={x:1,y:0};
+      dir = nextDir;
+      const head = {x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+      if(head.x<0||head.x>=cols||head.y<0||head.y>=rows||snake.some(s=>s.x===head.x&&s.y===head.y)){
+        alive=false;
+        clearInterval(timer);
+        showOverlay(overlay,'Game Over', `You scored ${score}.`, 'Play Again', reset);
+        addGlobalScore(score);
+        return;
+      }
+      snake.unshift(head);
+      if(head.x===food.x && head.y===food.y){
+        score++; setMeta(`SCORE <b>${score}</b>`);
+        food = place();
+        if(speedMs>60){ speedMs-=3; restartTimer(); }
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+    function draw(){
+      ctx.fillStyle='#06070F'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#FFC857';
+      ctx.fillRect(food.x*cell+2, food.y*cell+2, cell-4, cell-4);
+      snake.forEach((s,i)=>{
+        ctx.fillStyle = i===0 ? '#B6FF3C' : '#6FBF2A';
+        ctx.fillRect(s.x*cell+1, s.y*cell+1, cell-2, cell-2);
+      });
+    }
+    reset();
+    return () => { clearInterval(timer); keys._cleanup(); };
+  }
+});
+
+/* =========================================================
+   GAME 2 — Brick Smash (Breakout)
+   ========================================================= */
+registerGame('breakout', {
+  title:'Brick Smash', icon:'🧱', genre:'Classic · Breakout', accent:'var(--coral)',
+  init(container, setMeta){
+    const W=480,H=600;
+    const {wrap, canvas, ctx} = makeCanvas(W,H);
+    const overlay = makeOverlay(wrap);
+    container.appendChild(wrap);
+    const hint=document.createElement('p'); hint.className='hint';
+    hint.textContent='Left/Right arrows or drag to move the paddle. Clear all the bricks!';
+    container.appendChild(hint);
+    const keys = makeKeys();
+
+    let paddle, ball, bricks, score, lives, alive, raf;
+    const paddleW=84, paddleH=14, ballR=7;
+    const cols=8, rows=5, brickW=W/cols, brickH=22, brickTop=50;
+
+    function buildBricks(){
+      bricks=[];
+      const colors=['#FF5C72','#FFC857','#4FD2FF','#B6FF3C','#9D6BFF'];
+      for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+        bricks.push({x:c*brickW, y:brickTop+r*brickH, w:brickW-4, h:brickH-6, alive:true, color:colors[r%colors.length]});
+      }
+    }
+    function reset(){
+      paddle = {x:W/2-paddleW/2, y:H-30};
+      ball = {x:W/2, y:H-50, vx:4, vy:-4};
+      buildBricks();
+      score=0; lives=3; alive=true;
+      setMeta(`SCORE <b>0</b> &nbsp; LIVES <b>3</b>`);
+      hideOverlay(overlay);
+    }
+    function pointerMove(clientX){
+      const rect = canvas.getBoundingClientRect();
+      const scale = W/rect.width;
+      const x = (clientX-rect.left)*scale;
+      paddle.x = clamp(x-paddleW/2, 0, W-paddleW);
+    }
+    canvas.addEventListener('mousemove', e=>pointerMove(e.clientX));
+    canvas.addEventListener('touchmove', e=>{ e.preventDefault(); pointerMove(e.touches[0].clientX); }, {passive:false});
+
+    function step(){
+      if(alive){
+        if(keys['arrowleft']||keys['a']) paddle.x-=6;
+        if(keys['arrowright']||keys['d']) paddle.x+=6;
+        paddle.x = clamp(paddle.x,0,W-paddleW);
+
+        ball.x+=ball.vx; ball.y+=ball.vy;
+        if(ball.x<ballR||ball.x>W-ballR) ball.vx*=-1;
+        if(ball.y<ballR) ball.vy*=-1;
+        if(ball.y > H-30-ballR && ball.x>paddle.x && ball.x<paddle.x+paddleW && ball.vy>0){
+          ball.vy*=-1;
+          const hitPos = (ball.x-(paddle.x+paddleW/2))/(paddleW/2);
+          ball.vx = hitPos*5;
+        }
+        bricks.forEach(b=>{
+          if(!b.alive) return;
+          if(ball.x>b.x && ball.x<b.x+b.w && ball.y-ballR<b.y+b.h && ball.y+ballR>b.y){
+            b.alive=false; ball.vy*=-1; score++; setMeta(`SCORE <b>${score}</b> &nbsp; LIVES <b>${lives}</b>`);
+          }
+        });
+        if(ball.y>H+30){
+          lives--;
+          if(lives<=0){
+            alive=false;
+            showOverlay(overlay,'Game Over', `Final score: ${score}`, 'Play Again', reset);
+            addGlobalScore(score);
+          } else {
+            ball.x=W/2; ball.y=H-50; ball.vx=4; ball.vy=-4;
+            setMeta(`SCORE <b>${score}</b> &nbsp; LIVES <b>${lives}</b>`);
+          }
+        }
+        if(bricks.every(b=>!b.alive)){
+          alive=false;
+          showOverlay(overlay,'You Win!', `Cleared the board with score ${score}.`, 'Play Again', reset);
+          addGlobalScore(score+10);
+        }
+      }
+      draw();
+      raf=requestAnimationFrame(step);
+    }
+    function draw(){
+      ctx.fillStyle='#06070F'; ctx.fillRect(0,0,W,H);
+      bricks.forEach(b=>{ if(b.alive){ ctx.fillStyle=b.color; ctx.fillRect(b.x+2,b.y,b.w,b.h);} });
+      ctx.fillStyle='#F5F7FF'; ctx.fillRect(paddle.x,paddle.y,paddleW,paddleH);
+      ctx.beginPath(); ctx.arc(ball.x,ball.y,ballR,0,Math.PI*2); ctx.fillStyle='#FFC857'; ctx.fill();
+    }
+    reset();
+    raf=requestAnimationFrame(step);
+    return ()=>{ cancelAnimationFrame(raf); keys._cleanup(); };
+  }
+});
+
+/* =========================================================
+   GAME 3 — Sky Hop (Flappy-style)
+   ========================================================= */
+registerGame('flappy', {
+  title:'Sky Hop', icon:'🐦', genre:'Classic · Flappy', accent:'var(--sky)',
+  init(container,setMeta){
+    const W=400,H=600;
+    const {wrap,canvas,ctx} = makeCanvas(W,H);
+    const overlay = makeOverlay(wrap);
+    container.appendChild(wrap);
+    const hint=document.createElement('p'); hint.className='hint';
+    hint.textContent='Tap, click, or press Space to flap. Thread the gaps!';
+    container.appendChild(hint);
+
+    let bird, pipes, score, alive, raf, frame;
+    const gravity=0.45, flap=-7.5, pipeGap=150, pipeW=58, pipeSpeed=2.6;
+
+    function reset(){
+      bird={x:80,y:H/2,vy:0};
+      pipes=[];
+      score=0; alive=true; frame=0;
+      setMeta(`SCORE <b>0</b>`);
+      hideOverlay(overlay);
+      spawnPipe();
+    }
+    function spawnPipe(){
+      const gapY = rand(80, H-80-pipeGap);
+      pipes.push({x:W, gapY, passed:false});
+    }
+    function doFlap(){ if(alive) bird.vy=flap; }
+    canvas.addEventListener('mousedown', doFlap);
+    canvas.addEventListener('touchstart', e=>{e.preventDefault(); doFlap();},{passive:false});
+    function key(e){ if(e.key===' '){ e.preventDefault(); doFlap(); } }
+    window.addEventListener('keydown', key);
+
+    function step(){
+      if(alive){
+        frame++;
+        bird.vy+=gravity; bird.y+=bird.vy;
+        if(frame%90===0) spawnPipe();
+        pipes.forEach(p=> p.x -= pipeSpeed);
+        while(pipes.length && pipes[0].x < -pipeW) pipes.shift();
+        pipes.forEach(p=>{
+          if(!p.passed && p.x+pipeW < bird.x){ p.passed=true; score++; setMeta(`SCORE <b>${score}</b>`); }
+          const hitsX = bird.x+14 > p.x && bird.x-14 < p.x+pipeW;
+          const hitsY = bird.y-14 < p.gapY || bird.y+14 > p.gapY+pipeGap;
+          if(hitsX && hitsY) die();
+        });
+        if(bird.y>H-14 || bird.y<14) die();
+      }
+      draw();
+      raf=requestAnimationFrame(step);
+    }
+    function die(){
+      if(!alive) return;
+      alive=false;
+      showOverlay(overlay,'Crashed!', `You scored ${score}.`, 'Play Again', reset);
+      addGlobalScore(score);
+    }
+    function draw(){
+      ctx.fillStyle='#0B1A33'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#4FD2FF';
+      pipes.forEach(p=>{
+        ctx.fillRect(p.x,0,pipeW,p.gapY);
+        ctx.fillRect(p.x,p.gapY+pipeGap,pipeW,H-(p.gapY+pipeGap));
+      });
+      ctx.fillStyle='#FFC857';
+      ctx.beginPath(); ctx.arc(bird.x,bird.y,14,0,Math.PI*2); ctx.fill();
+    }
+    reset();
+    raf=requestAnimationFrame(step);
+    return ()=>{ cancelAnimationFrame(raf); window.removeEventListener('keydown', key); };
+  }
+});
+
+/* =========================================================
+   GAME 4 — Speed Dash (endless runner)
+   ========================================================= */
+registerGame('runner', {
+  title:'Speed Dash', icon:'🏃', genre:'Arcade · Runner', accent:'var(--gold)',
+  init(container,setMeta){
+    const W=480,H=300;
+    const {wrap,canvas,ctx}=makeCanvas(W,H);
+    const overlay=makeOverlay(wrap);
+    container.appendChild(wrap);
+    const hint=document.createElement('p'); hint.className='hint';
+    hint.textContent='Space / Tap / Jump button to hop over obstacles. Survive as long as you can!';
+    container.appendChild(hint);
+    const keys=makeKeys();
+    makeDPad(container, keys, {action:'JUMP', actionKey:'up'});
+
+    const groundY=H-40;
+    let player, obstacles, speed, dist, alive, raf, spawnTimer;
+
+    function reset(){
+      player={x:60,y:groundY-30,w:28,h:30,vy:0,jumping:false};
+      obstacles=[]; speed=4.2; dist=0; alive=true; spawnTimer=40;
+      setMeta(`DISTANCE <b>0</b>`);
+      hideOverlay(overlay);
+    }
+    function jump(){
+      if(alive && !player.jumping){ player.vy=-9.5; player.jumping=true; }
+    }
+    function key(e){ if(e.key===' '){ e.preventDefault(); jump(); } }
+    window.addEventListener('keydown', key);
+    canvas.addEventListener('mousedown', jump);
+    canvas.addEventListener('touchstart', e=>{e.preventDefault(); jump();},{passive:false});
+
+    function step(){
+      if(alive){
+        if(keys['up']||keys['w']||keys[' ']) jump();
+        player.vy+=0.55; player.y+=player.vy;
+        if(player.y>groundY-player.h){ player.y=groundY-player.h; player.vy=0; player.jumping=false; }
+        spawnTimer--;
+        if(spawnTimer<=0){
+          obstacles.push({x:W, w:rand(18,30), h:rand(28,46)});
+          spawnTimer = randInt(50,90) - Math.min(30,speed*4);
+        }
+        obstacles.forEach(o=> o.x -= speed);
+        while(obstacles.length && obstacles[0].x < -40) obstacles.shift();
+        obstacles.forEach(o=>{
+          const ox=o.x, oy=groundY-o.h;
+          if(player.x+player.w>ox && player.x<ox+o.w && player.y+player.h>oy){
+            die();
+          }
+        });
+        speed += 0.0025;
+        dist += speed*0.1;
+        setMeta(`DISTANCE <b>${Math.floor(dist)}</b>`);
+      }
+      draw();
+      raf=requestAnimationFrame(step);
+    }
+    function die(){
+      if(!alive) return;
+      alive=false;
+      showOverlay(overlay,'Wipeout!', `You ran ${Math.floor(dist)}m.`, 'Play Again', reset);
+      addGlobalScore(Math.floor(dist));
+    }
+    function draw(){
+      ctx.fillStyle='#101225'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#2B2F5C'; ctx.fillRect(0,groundY,W,H-groundY);
+      ctx.fillStyle='#B6FF3C'; ctx.fillRect(player.x,player.y,player.w,player.h);
+      ctx.fillStyle='#FF5C72';
+      obstacles.forEach(o=> ctx.fillRect(o.x, groundY-o.h, o.w, o.h));
+    }
+    reset();
+    raf=requestAnimationFrame(step);
+    return ()=>{ cancelAnimationFrame(raf); window.removeEventListener('keydown', key); keys._cleanup(); };
+  }
+});
+
+/* =========================================================
+   GAME 5 — Obby Climb (vertical platformer)
+   ========================================================= */
+registerGame('obby', {
+  title:'Obby Climb', icon:'🧗', genre:'Platformer · Obby', accent:'var(--lime)',
+  init(container,setMeta){
+    const W=320,H=480;
+    const {wrap,canvas,ctx}=makeCanvas(W,H);
+    const overlay=makeOverlay(wrap);
+    container.appendChild(wrap);
+    const hint=document.createElement('p'); hint.className='hint';
+    hint.textContent='Left/Right to move, Space/Up to jump. Climb as high as you can without falling!';
+    container.appendChild(hint);
+    const keys=makeKeys();
+    makeDPad(container, keys, {action:'JUMP', actionKey:'up'});
+
+    let player, platforms, cameraY, alive, raf, highestY, best;
+
+    function genPlatform(y){
+      const w = rand(55,95);
+      return {x: rand(10,W-10-w), y, w, h:12};
+    }
+    function reset(){
+      platforms=[{x:0,y:440,w:W,h:20}];
+      let y=400;
+      for(let i=0;i<14;i++){ platforms.push(genPlatform(y)); y -= rand(45,68); }
+      highestY = y;
+      player={x:W/2,y:400,w:20,h:20,vx:0,vy:0,onGround:true};
+      cameraY=0; alive=true; best=0;
+      setMeta(`HEIGHT <b>0</b>`);
+      hideOverlay(overlay);
+    }
+    function key(e){ if(e.key===' ') e.preventDefault(); }
+    window.addEventListener('keydown', key);
+
+    function step(){
+      if(alive){
+        const left = keys['arrowleft']||keys['a'];
+        const right = keys['arrowright']||keys['d'];
+        player.vx = left ? -3.2 : right ? 3.2 : 0;
+        if((keys['arrowup']||keys['w']||keys[' ']) && player.onGround){ player.vy=-8.6; player.onGround=false; }
+        player.vy += 0.42;
+        player.x += player.vx; player.y += player.vy;
+        player.x = clamp(player.x, 0, W-player.w);
+
+        player.onGround=false;
+        platforms.forEach(p=>{
+          if(player.vy>0 && player.x+player.w>p.x && player.x<p.x+p.w &&
+             player.y+player.h>p.y && player.y+player.h<p.y+p.h+player.vy+1){
+            player.y = p.y-player.h; player.vy=0; player.onGround=true;
+          }
+        });
+
+        while(highestY > player.y - H){
+          highestY -= rand(45,68);
+          platforms.push(genPlatform(highestY));
+        }
+        if(player.y - cameraY < H*0.42){ cameraY = player.y - H*0.42; }
+        const height = Math.max(0, Math.floor((400-player.y)/10));
+        if(height>best){ best=height; setMeta(`HEIGHT <b>${best}</b>`); }
+
+        if(player.y - cameraY > H+40) die();
+      }
+      draw();
+      raf=requestAnimationFrame(step);
+    }
+    function die(){
+      if(!alive) return;
+      alive=false;
+      showOverlay(overlay,'You Fell!', `Best height: ${best}`, 'Play Again', reset);
+      addGlobalScore(best);
+    }
+    function draw(){
+      ctx.fillStyle='#0B0D22'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#272C58';
+      platforms.forEach(p=>{
+        const py = p.y-cameraY;
+        if(py>-20 && py<H+20) ctx.fillRect(p.x,py,p.w,p.h);
+      });
+      ctx.fillStyle='#B6FF3C';
+      ctx.fillRect(player.x, player.y-cameraY, player.w, player.h);
+    }
+    reset();
+    raf=requestAnimationFrame(step);
+    return ()=>{ cancelAnimationFrame(raf); window.removeEventListener('keydown', key); keys._cleanup(); };
+  }
+});
+
+/* =========================================================
+   GAME 6 — Block Tycoon (idle clicker)
+   ========================================================= */
+registerGame('tycoon', {
+  title:'Block Tycoon', icon:'💰', genre:'Simulation · Tycoon', accent:'var(--gold)',
+  init(container, setMeta){
+    const panel = document.createElement('div');
+    panel.className='panel';
+    container.appendChild(panel);
+
+    let coins = 0, perClick = 1, perSec = 0;
+    const upgrades = [
+      {id:'click1', label:'Sharper Pickaxe', desc:'+1 coin per tap', cost:15, costMul:1.6, effect:()=>perClick+=1, owned:0},
+      {id:'auto1', label:'Mini Factory', desc:'+1 coin / sec', cost:25, costMul:1.7, effect:()=>perSec+=1, owned:0},
+      {id:'click2', label:'Golden Hammer', desc:'+5 coins per tap', cost:120, costMul:1.65, effect:()=>perClick+=5, owned:0},
+      {id:'auto2', label:'Mega Factory', desc:'+8 coins / sec', cost:300, costMul:1.7, effect:()=>perSec+=8, owned:0},
+    ];
+
+    function render(){
+      panel.innerHTML = `
+        <div style="text-align:center; margin-bottom:18px;">
+          <div style="font-family:var(--font-mono); color:var(--text-faint); font-size:12px; letter-spacing:1px;">YOUR FORTUNE</div>
+          <div style="font-family:var(--font-display); font-size:42px; color:var(--gold);">${Math.floor(coins)} 🪙</div>
+          <div style="color:var(--text-lo); font-size:13px;">+${perClick}/tap &nbsp;·&nbsp; +${perSec}/sec</div>
+        </div>
+        <div class="row" style="margin-bottom:20px;">
+          <button class="btn" id="mineBtn" style="font-size:18px; padding:18px 36px;">⛏️ MINE</button>
+        </div>
+        <div id="upgrades" style="display:flex; flex-direction:column; gap:10px;"></div>
+      `;
+      const upDiv = panel.querySelector('#upgrades');
+      upgrades.forEach(u=>{
+        const row = document.createElement('button');
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; cursor:pointer; color:var(--text-hi); text-align:left;';
+        row.disabled = coins < u.cost;
+        row.style.opacity = row.disabled ? 0.5 : 1;
+        row.innerHTML = `<div><b>${u.label}</b><div style="font-size:12px; color:var(--text-lo);">${u.desc} · owned ${u.owned}</div></div><div style="font-family:var(--font-mono); color:var(--gold);">${Math.floor(u.cost)}🪙</div>`;
+        row.addEventListener('click', ()=>{
+          if(coins<u.cost) return;
+          coins-=u.cost; u.owned++; u.effect(); u.cost*=u.costMul;
+          render();
+        });
+        upDiv.appendChild(row);
+      });
+      panel.querySelector('#mineBtn').addEventListener('click', ()=>{
+        coins+=perClick;
+        addGlobalScore(perClick);
+        render();
+      });
+    }
+    let timer = setInterval(()=>{ if(perSec>0){ coins+=perSec*0.5; render(); } }, 500);
+    render();
+    return ()=> clearInterval(timer);
+  }
+});
+
+/* =========================================================
+   GAME 7 — Match Mania (memory match)
+   ========================================================= */
+registerGame('memory', {
+  title:'Match Mania', icon:'🧠', genre:'Puzzle · Memory', accent:'var(--sky)',
+  init(container, setMeta){
+    const panel = document.createElement('div');
+    panel.className='panel';
+    panel.style.maxWidth='420px';
+    container.appendChild(panel);
+    const emojis = ['🟩','🟦','🟥','🟨','🟪','🟧','⭐','💎'];
+    let cards, flipped, matched, moves, locked;
+
+    function shuffle(arr){
+      for(let i=arr.length-1;i>0;i--){ const j=randInt(0,i); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+      return arr;
+    }
+    function reset(){
+      cards = shuffle([...emojis,...emojis]).map((e,i)=>({id:i, val:e, open:false, done:false}));
+      flipped=[]; matched=0; moves=0; locked=false;
+      render();
+    }
+    function render(){
+      panel.innerHTML = `
+        <div style="text-align:center; margin-bottom:14px;">
+          <div style="font-family:var(--font-mono); color:var(--text-lo); font-size:13px;">MOVES <b style="color:var(--lime)">${moves}</b> &nbsp; PAIRS <b style="color:var(--lime)">${matched}/8</b></div>
+        </div>
+        <div id="grid" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;"></div>
+      `;
+      const grid = panel.querySelector('#grid');
+      cards.forEach(c=>{
+        const b = document.createElement('button');
+        b.style.cssText = `aspect-ratio:1; border-radius:10px; border:1px solid var(--line); font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; background:${c.open||c.done?'var(--surface-3)':'var(--surface-2)'};`;
+        b.textContent = (c.open||c.done) ? c.val : '';
+        b.disabled = c.done;
+        b.addEventListener('click', ()=> flip(c));
+        grid.appendChild(b);
+      });
+      if(matched===8){
+        const win = document.createElement('div');
+        win.style.cssText='text-align:center; margin-top:16px;';
+        win.innerHTML = `<p style="color:var(--lime); font-weight:700;">Solved in ${moves} moves! 🎉</p>`;
+        const btn = document.createElement('button');
+        btn.className='btn'; btn.textContent='Play Again';
+        btn.addEventListener('click', reset);
+        win.appendChild(btn);
+        panel.appendChild(win);
+        addGlobalScore(Math.max(5, 40-moves));
+      }
+    }
+    function flip(c){
+      if(locked || c.open || c.done || flipped.length>=2) return;
+      c.open=true; flipped.push(c);
+      render();
+      if(flipped.length===2){
+        moves++;
+        locked=true;
+        if(flipped[0].val===flipped[1].val){
+          flipped.forEach(f=>f.done=true);
+          matched++;
+          flipped=[]; locked=false;
+          render();
+        } else {
+          setTimeout(()=>{
+            flipped.forEach(f=>f.open=false);
+            flipped=[]; locked=false;
+            render();
+          }, 700);
+        }
+      }
+    }
+    reset();
+    return null;
+  }
+});
+
+/* =========================================================
+   GAME 8 — Cube Merge (2048-style)
+   ========================================================= */
+registerGame('merge2048', {
+  title:'Cube Merge', icon:'🔢', genre:'Puzzle · Merge', accent:'var(--coral)',
+  init(container, setMeta){
+    const panel = document.createElement('div');
+    panel.className='panel';
+    panel.style.maxWidth='400px';
+    container.appendChild(panel);
+    const hint=document.createElement('p'); hint.className='hint';
+    hint.textContent='Swipe or use arrow keys to merge matching blocks. Reach 2048!';
+    container.appendChild(hint);
+
+    const size=4;
+    let grid, score, over;
+    const colors = {2:'#272C58',4:'#2F356B',8:'#4FD2FF',16:'#3FBFE8',32:'#FF5C72',64:'#FF3D5A',128:'#FFC857',256:'#FFB300',512:'#B6FF3C',1024:'#8FD92A',2048:'#FFD700'};
+
+    function emptyGrid(){ return Array.from({length:size},()=>Array(size).fill(0)); }
+    function addRandom(){
+      const empties=[];
+      for(let r=0;r<size;r++) for(let c=0;c<size;c++) if(grid[r][c]===0) empties.push([r,c]);
+      if(!empties.length) return;
+      const [r,c] = empties[randInt(0,empties.length-1)];
+      grid[r][c] = Math.random()<0.9 ? 2 : 4;
+    }
+    function reset(){
+      grid = emptyGrid(); score=0; over=false;
+      addRandom(); addRandom();
+      render();
+    }
+    function slideRow(row){
+      let arr = row.filter(v=>v!==0);
+      for(let i=0;i<arr.length-1;i++){
+        if(arr[i]===arr[i+1]){ arr[i]*=2; score+=arr[i]; arr.splice(i+1,1); }
+      }
+      while(arr.length<size) arr.push(0);
+      return arr;
+    }
+    function rotateGrid(g){
+      const n=g.length; const res=emptyGrid();
+      for(let r=0;r<n;r++) for(let c=0;c<n;c++) res[c][n-1-r]=g[r][c];
+      return res;
+    }
+    function move(dir){
+      if(over) return;
+      let g = grid.map(r=>[...r]);
+      let rotations = {up:1, right:2, down:3, left:0}[dir];
+      for(let i=0;i<rotations;i++) g = rotateGrid(g);
+      const before = JSON.stringify(g);
+      g = g.map(row=>slideRow(row));
+      const after = JSON.stringify(g);
+      for(let i=0;i<(4-rotations)%4;i++) g = rotateGrid(g);
+      grid = g;
+      if(before !== after){
+        addRandom();
+      }
+      checkOver();
+      render();
+    }
+    function checkOver(){
+      for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+        if(grid[r][c]===0) return;
+        if(c<size-1 && grid[r][c]===grid[r][c+1]) return;
+        if(r<size-1 && grid[r][c]===grid[r+1][c]) return;
+      }
+      over=true;
+      addGlobalScore(score);
+    }
+    function render(){
+      panel.innerHTML='';
+      const head = document.createElement('div');
+      head.style.cssText='display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;';
+      head.innerHTML = `<div style="font-family:var(--font-display); font-size:20px;">SCORE: <span style="color:var(--gold)">${score}</span></div>`;
+      const newBtn = document.createElement('button');
+      newBtn.className='btn secondary'; newBtn.textContent='New Game';
+      newBtn.addEventListener('click', reset);
+      head.appendChild(newBtn);
+      panel.appendChild(head);
+
+      const gridEl = document.createElement('div');
+      gridEl.style.cssText = `display:grid; grid-template-columns:repeat(${size},1fr); gap:8px; background:var(--surface-2); padding:8px; border-radius:10px;`;
+      for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+        const v = grid[r][c];
+        const cell = document.createElement('div');
+        cell.style.cssText = `aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:${v>512?16:20}px; background:${v? (colors[v]||'#FFD700') : 'var(--surface)'}; color:${v<=4?'var(--text-lo)':'#101225'};`;
+        cell.textContent = v||'';
+        gridEl.appendChild(cell);
+      }
+      panel.appendChild(gridEl);
+      if(over){
+        const msg = document.createElement('p');
+        msg.style.cssText='text-align:center; color:var(--coral); font-weight:700; margin-top:14px;';
+        msg.textContent = 'No more moves! Final score: '+score;
+        panel.appendChild(msg);
+      }
+    }
+    function key(e){
+      const map = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+      if(map[e.key]){ e.preventDefault(); move(map[e.key]); }
+    }
+    window.addEventListener('keydown', key);
+    let touchStart=null;
+    panel.addEventListener('touchstart', e=>{ touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY}; }, {passive:true});
+    panel.addEventListener('touchend', e=>{
+      if(!touchStart) return;
+      const dx = e.changedTouches[0].clientX-touchStart.x;
+      const dy = e.changedTouches[0].clientY-touchStart.y;
+      if(Math.abs(dx)>Math.abs(dy)){ move(dx>30?'right':dx<-30?'left':null); }
+      else { move(dy>30?'down':dy<-30?'up':null); }
+      touchStart=null;
+    });
+    reset();
+    return ()=> window.removeEventListener('keydown', key);
+  }
+});
+
+/* =========================================================
+   GAME 9 — Escape the Chaser
+   ========================================================= */
+registerGame('chaser', {
+  title:'Escape the Chaser', icon:'😱', genre:'Action · Escape', accent:'var(--coral)',
+  init(container,setMeta){
+    const W=420,H=420;
+    const {wrap,canvas,ctx}=makeCanvas(W,H);
+    const overlay=makeOverlay(wrap);
+    container.appendChild(wrap);
+    const hint=document.createElement('p'); hint.className='hint';
+    hint.textContent="Arrow keys / WASD / D-pad to run. Grab the gold gems, don't let the red chaser catch you!";
+    container.appendChild(hint);
+    const keys=makeKeys();
+    makeDPad(container, keys);
+
+    let player, chaser, gems, score, time, alive, raf, lastTs;
+
+    function reset(){
+      player={x:60,y:60,r:12};
+      chaser={x:W-60,y:H-60,r:14,speed:1.7};
+      gems=[]; for(let i=0;i<5;i++) spawnGem();
+      score=0; time=0; alive=true; lastTs=performance.now();
+      setMeta(`GEMS <b>0</b> &nbsp; TIME <b>0s</b>`);
+      hideOverlay(overlay);
+    }
+    function spawnGem(){
+      gems.push({x:rand(20,W-20), y:rand(20,H-20)});
+    }
+    function step(ts){
+      const dt = Math.min(32, ts-lastTs); lastTs=ts;
+      if(alive){
+        let vx=0,vy=0;
+        if(keys['arrowleft']||keys['a']||keys['left']) vx-=1;
+        if(keys['arrowright']||keys['d']||keys['right']) vx+=1;
+        if(keys['arrowup']||keys['w']||keys['up']) vy-=1;
+        if(keys['arrowdown']||keys['s']||keys['down']) vy+=1;
+        const len = Math.hypot(vx,vy)||1;
+        player.x = clamp(player.x + (vx/len)*3.1*(dt/16), player.r, W-player.r);
+        player.y = clamp(player.y + (vy/len)*3.1*(dt/16), player.r, H-player.r);
+
+        const ang = Math.atan2(player.y-chaser.y, player.x-chaser.x);
+        chaser.x += Math.cos(ang)*chaser.speed*(dt/16);
+        chaser.y += Math.sin(ang)*chaser.speed*(dt/16);
+
+        gems = gems.filter(g=>{
+          if(Math.hypot(g.x-player.x,g.y-player.y) < player.r+8){
+            score++; chaser.speed+=0.12; spawnGem();
+            setMeta(`GEMS <b>${score}</b> &nbsp; TIME <b>${Math.floor(time)}s</b>`);
+            return false;
+          }
+          return true;
+        });
+
+        if(Math.hypot(chaser.x-player.x, chaser.y-player.y) < player.r+chaser.r){
+          die();
+        }
+        time += dt/1000;
+        setMeta(`GEMS <b>${score}</b> &nbsp; TIME <b>${Math.floor(time)}s</b>`);
+      }
+      draw();
+      raf=requestAnimationFrame(step);
+    }
+    function die(){
+      if(!alive) return;
+      alive=false;
+      showOverlay(overlay,'Caught!', `You grabbed ${score} gems and survived ${Math.floor(time)}s.`, 'Play Again', reset);
+      addGlobalScore(score*3+Math.floor(time));
+    }
+    function draw(){
+      ctx.fillStyle='#0B0D22'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#FFC857';
+      gems.forEach(g=>{ ctx.beginPath(); ctx.arc(g.x,g.y,8,0,Math.PI*2); ctx.fill(); });
+      ctx.fillStyle='#4FD2FF';
+      ctx.beginPath(); ctx.arc(player.x,player.y,player.r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#FF3D5A';
+      ctx.beginPath(); ctx.arc(chaser.x,chaser.y,chaser.r,0,Math.PI*2); ctx.fill();
+    }
+    reset();
+    raf=requestAnimationFrame(step);
+    return ()=>{ cancelAnimationFrame(raf); keys._cleanup(); };
+  }
+});
+
+/* =========================================================
+   GAME 10 — Reflex Smash (whack-a-block)
+   ========================================================= */
+registerGame('reflex', {
+  title:'Reflex Smash', icon:'🔨', genre:'Arcade · Reflex', accent:'var(--lime)',
+  init(container, setMeta){
+    const panel = document.createElement('div');
+    panel.className='panel';
+    panel.style.maxWidth='420px';
+    container.appendChild(panel);
+    let score=0, timeLeft=30, grid=Array(9).fill(false), running=true, gameTimer, spawnTimer;
+
+    function render(){
+      panel.innerHTML = `
+        <div style="text-align:center; margin-bottom:14px; font-family:var(--font-mono); color:var(--text-lo);">
+          SCORE <b style="color:var(--lime)">${score}</b> &nbsp; TIME <b style="color:var(--coral)">${timeLeft}s</b>
+        </div>
+        <div id="grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;"></div>
+      `;
+      const g = panel.querySelector('#grid');
+      grid.forEach((on,i)=>{
+        const cell = document.createElement('button');
+        cell.style.cssText = `aspect-ratio:1; border-radius:12px; border:1px solid var(--line); cursor:pointer; font-size:30px; background:${on?'var(--lime)':'var(--surface-2)'};`;
+        cell.textContent = on ? '💥' : '';
+        cell.addEventListener('click', ()=>{
+          if(!running) return;
+          if(grid[i]){ grid[i]=false; score++; render(); addGlobalScore(1); }
+        });
+        g.appendChild(cell);
+      });
+      if(!running){
+        const msg=document.createElement('p');
+        msg.style.cssText='text-align:center; margin-top:16px; color:var(--gold); font-weight:700;';
+        msg.textContent = `Time's up! Final score: ${score}`;
+        panel.appendChild(msg);
+        const btn=document.createElement('button');
+        btn.className='btn'; btn.textContent='Play Again'; btn.style.display='block'; btn.style.margin='12px auto 0';
+        btn.addEventListener('click', start);
+        panel.appendChild(btn);
+      }
+    }
+    function spawn(){
+      if(!running) return;
+      grid = grid.map(()=>false);
+      grid[randInt(0,8)] = true;
+      render();
+    }
+    function start(){
+      score=0; timeLeft=30; running=true; grid=Array(9).fill(false);
+      clearInterval(gameTimer); clearInterval(spawnTimer);
+      gameTimer = setInterval(()=>{
+        timeLeft--;
+        if(timeLeft<=0){ running=false; clearInterval(gameTimer); clearInterval(spawnTimer); }
+        render();
+      },1000);
+      spawnTimer = setInterval(spawn, 700);
+      render();
+    }
+    start();
+    return ()=>{ clearInterval(gameTimer); clearInterval(spawnTimer); };
+  }
+});
+
+/* =========================================================
+   GAME 11 — Asteroid Blaster (top-down shooter)
+   ========================================================= */
+registerGame('blaster', {
+  title:'Asteroid Blaster', icon:'🚀', genre:'Action · Shooter', accent:'var(--sky)',
+  init(container, setMeta){
+    const W=420,H=500;
+    const {wrap,canvas,ctx}=makeCanvas(W,H);
+    const overlay=makeOverlay(wrap);
+    container.appendChild(wrap);
+    const hint=document.createElement('p'); hint.className='hint';
+    hint.textContent='Left/Right or A/D to steer, Space to shoot. Destroy asteroids before they reach you!';
+    container.appendChild(hint);
+    const keys=makeKeys();
+    makeDPad(container, keys, {action:'FIRE', actionKey:'fire'});
+
+    let ship, bullets, rocks, score, lives, alive, raf, spawnTimer, shootCd;
+
+    function reset(){
+      ship={x:W/2,y:H-40,w:26,h:22};
+      bullets=[]; rocks=[]; score=0; lives=3; alive=true; spawnTimer=0; shootCd=0;
+      setMeta(`SCORE <b>0</b> &nbsp; LIVES <b>3</b>`);
+      hideOverlay(overlay);
+    }
+    function shoot(){ if(shootCd<=0 && alive){ bullets.push({x:ship.x,y:ship.y-16}); shootCd=14; } }
+    function key(e){ if(e.key===' '){ e.preventDefault(); shoot(); } }
+    window.addEventListener('keydown', key);
+
+    function step(){
+      if(alive){
+        if(keys['arrowleft']||keys['a']) ship.x-=4.2;
+        if(keys['arrowright']||keys['d']) ship.x+=4.2;
+        ship.x = clamp(ship.x, 16, W-16);
+        if(keys['fire']||keys[' ']) shoot();
+        shootCd--;
+
+        bullets.forEach(b=> b.y-=8);
+        bullets = bullets.filter(b=>b.y>-10);
+
+        spawnTimer--;
+        if(spawnTimer<=0){
+          rocks.push({x:rand(20,W-20), y:-20, r:rand(14,26), speed:rand(1.4,2.6)});
+          spawnTimer = randInt(28,55);
+        }
+        rocks.forEach(r=> r.y+=r.speed);
+
+        bullets.forEach(b=>{
+          rocks.forEach(r=>{
+            if(!r.dead && Math.hypot(b.x-r.x,b.y-r.y)<r.r){ r.dead=true; b.dead=true; score++; setMeta(`SCORE <b>${score}</b> &nbsp; LIVES <b>${lives}</b>`); }
+          });
+        });
+        bullets = bullets.filter(b=>!b.dead);
+        rocks.forEach(r=>{
+          if(!r.dead && Math.hypot(ship.x-r.x, ship.y-r.y) < r.r+12){
+            r.dead=true; lives--;
+            setMeta(`SCORE <b>${score}</b> &nbsp; LIVES <b>${lives}</b>`);
+            if(lives<=0) die();
+          }
+        });
+        rocks = rocks.filter(r=>!r.dead && r.y<H+30);
+      }
+      draw();
+      raf=requestAnimationFrame(step);
+    }
+    function die(){
+      if(!alive) return;
+      alive=false;
+      showOverlay(overlay,'Ship Destroyed', `Final score: ${score}`, 'Play Again', reset);
+      addGlobalScore(score*2);
+    }
+    function draw(){
+      ctx.fillStyle='#06081A'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#9098C2';
+      rocks.forEach(r=>{ ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.fill(); });
+      ctx.fillStyle='#FFC857';
+      bullets.forEach(b=> ctx.fillRect(b.x-2,b.y-8,4,10));
+      ctx.fillStyle='#4FD2FF';
+      ctx.beginPath();
+      ctx.moveTo(ship.x, ship.y-14);
+      ctx.lineTo(ship.x-14, ship.y+12);
+      ctx.lineTo(ship.x+14, ship.y+12);
+      ctx.closePath(); ctx.fill();
+    }
+    reset();
+    raf=requestAnimationFrame(step);
+    return ()=>{ cancelAnimationFrame(raf); window.removeEventListener('keydown', key); keys._cleanup(); };
+  }
+});
+
+/* =========================================================
+   GAME 12 — Color Echo (Simon Says)
+   ========================================================= */
+registerGame('simon', {
+  title:'Color Echo', icon:'🎵', genre:'Puzzle · Memory', accent:'var(--gold)',
+  init(container, setMeta){
+    const panel = document.createElement('div');
+    panel.className='panel';
+    panel.style.maxWidth='360px';
+    container.appendChild(panel);
+
+    const colors = [
+      {id:0, on:'#FF5C72', off:'#5A2530'},
+      {id:1, on:'#4FD2FF', off:'#1F4A5A'},
+      {id:2, on:'#B6FF3C', off:'#3D5A1F'},
+      {id:3, on:'#FFC857', off:'#5A4A1F'},
+    ];
+    let sequence, playerStep, level, showing, locked;
+
+    function render(){
+      panel.innerHTML = `
+        <div style="text-align:center; margin-bottom:16px;">
+          <div style="font-family:var(--font-mono); color:var(--text-faint); font-size:12px;">ROUND</div>
+          <div style="font-family:var(--font-display); font-size:36px; color:var(--gold);">${level}</div>
+        </div>
+        <div id="pad" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;"></div>
+        <p class="hint" id="status" style="text-align:center;">Watch the sequence...</p>
+      `;
+      const pad = panel.querySelector('#pad');
+      colors.forEach(c=>{
+        const b = document.createElement('button');
+        b.dataset.id = c.id;
+        b.style.cssText = `aspect-ratio:1; border-radius:14px; border:none; cursor:pointer; background:${c.off};`;
+        b.addEventListener('click', ()=> handlePress(c.id));
+        pad.appendChild(b);
+      });
+    }
+    function flash(id, dur=400){
+      const btn = panel.querySelector(`#pad button[data-id="${id}"]`);
+      if(!btn) return;
+      btn.style.background = colors[id].on;
+      setTimeout(()=>{ if(btn) btn.style.background = colors[id].off; }, dur);
+    }
+    function playSequence(){
+      showing=true; locked=true;
+      const status = panel.querySelector('#status');
+      if(status) status.textContent='Watch the sequence...';
+      sequence.forEach((id,i)=>{
+        setTimeout(()=> flash(id, 380), i*620);
+      });
+      setTimeout(()=>{
+        showing=false; locked=false; playerStep=0;
+        const s = panel.querySelector('#status');
+        if(s) s.textContent='Your turn — repeat it!';
+      }, sequence.length*620);
+    }
+    function handlePress(id){
+      if(locked || showing) return;
+      flash(id, 220);
+      if(id === sequence[playerStep]){
+        playerStep++;
+        if(playerStep===sequence.length){
+          level++;
+          addGlobalScore(level);
+          sequence.push(randInt(0,3));
+          setTimeout(playSequence, 500);
+        }
+      } else {
+        locked=true;
+        const status = panel.querySelector('#status');
+        if(status) status.innerHTML = `Wrong! You reached round <b style="color:var(--coral)">${level}</b>.`;
+        const btn = document.createElement('button');
+        btn.className='btn'; btn.textContent='Play Again'; btn.style.cssText='display:block; margin:14px auto 0;';
+        btn.addEventListener('click', reset);
+        panel.appendChild(btn);
+      }
+    }
+    function reset(){
+      sequence=[randInt(0,3)]; playerStep=0; level=1; showing=false; locked=true;
+      render();
+      setTimeout(playSequence, 600);
+    }
+    reset();
+    return null;
+  }
+});
+
+/* =========================================================
+   GAME 13 — Quiz Rush (trivia)
+   ========================================================= */
+registerGame('quiz', {
+  title:'Quiz Rush', icon:'❓', genre:'Trivia · Quiz', accent:'var(--lime)',
+  init(container, setMeta){
+    const panel = document.createElement('div');
+    panel.className='panel';
+    container.appendChild(panel);
+    const QUESTIONS = [
+      {q:'What color do you get mixing red and blue?', a:['Purple','Green','Orange','Black'], correct:0},
+      {q:'How many sides does a hexagon have?', a:['5','6','7','8'], correct:1},
+      {q:'Which planet is known as the Red Planet?', a:['Venus','Jupiter','Mars','Saturn'], correct:2},
+      {q:'What is the largest ocean on Earth?', a:['Atlantic','Indian','Arctic','Pacific'], correct:3},
+      {q:'How many legs does a spider have?', a:['6','8','10','4'], correct:1},
+      {q:'What is the freezing point of water in °C?', a:['0','10','-10','100'], correct:0},
+      {q:'Which is the smallest prime number?', a:['0','1','2','3'], correct:2},
+      {q:'What gas do plants absorb from air?', a:['Oxygen','Nitrogen','CO2','Helium'], correct:2},
+      {q:'How many continents are there?', a:['5','6','7','8'], correct:2},
+      {q:'What shape has 3 sides?', a:['Square','Triangle','Circle','Pentagon'], correct:1},
+    ];
+    let order, idx, score, locked;
+
+    function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=randInt(0,i);[a[i],a[j]]=[a[j],a[i]];} return a; }
+    function reset(){
+      order = shuffle(QUESTIONS).slice(0,8);
+      idx=0; score=0; locked=false;
+      render();
+    }
+    function render(){
+      if(idx>=order.length){
+        panel.innerHTML = `
+          <div style="text-align:center;">
+            <div style="font-family:var(--font-display); font-size:28px; margin-bottom:8px;">Quiz Complete!</div>
+            <p style="color:var(--text-lo);">Score: <b style="color:var(--gold)">${score}/${order.length}</b></p>
+          </div>`;
+        const btn = document.createElement('button');
+        btn.className='btn'; btn.textContent='Play Again'; btn.style.cssText='display:block; margin:14px auto 0;';
+        btn.addEventListener('click', reset);
+        panel.appendChild(btn);
+        addGlobalScore(score*5);
+        return;
+      }
+      const q = order[idx];
+      panel.innerHTML = `
+        <div style="font-family:var(--font-mono); color:var(--text-faint); font-size:12px; margin-bottom:8px;">QUESTION ${idx+1}/${order.length} · SCORE ${score}</div>
+        <h3 style="margin:0 0 16px; font-size:18px;">${q.q}</h3>
+        <div id="opts" style="display:flex; flex-direction:column; gap:10px;"></div>
+      `;
+      const opts = panel.querySelector('#opts');
+      q.a.forEach((ans,i)=>{
+        const b = document.createElement('button');
+        b.textContent = ans;
+        b.style.cssText='padding:13px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); color:var(--text-hi); cursor:pointer; text-align:left; font-size:14px;';
+        b.addEventListener('click', ()=> answer(i, b));
+        opts.appendChild(b);
+      });
+    }
+    function answer(i, btnEl){
+      if(locked) return;
+      locked=true;
+      const q = order[idx];
+      const buttons = panel.querySelectorAll('#opts button');
+      buttons[q.correct].style.background = 'var(--lime)';
+      buttons[q.correct].style.color = '#0E1024';
+      if(i!==q.correct){ btnEl.style.background='var(--coral)'; }
+      else score++;
+      setTimeout(()=>{ idx++; locked=false; render(); }, 700);
+    }
+    reset();
+    return null;
+  }
+});
+
+/* =========================================================
+   GAME 14 — Pixel Pet Care
+   ========================================================= */
+registerGame('petcare', {
+  title:'Pixel Pet Care', icon:'🐾', genre:'Simulation · Pet Care', accent:'var(--coral)',
+  init(container, setMeta){
+    const panel = document.createElement('div');
+    panel.className='panel';
+    container.appendChild(panel);
+    let hunger=70, happiness=70, energy=70, coins=10, alive=true, age=0;
+    let timer;
+
+    function statBar(label, val, color){
+      return `<div style="margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-lo); margin-bottom:4px;"><span>${label}</span><span>${Math.round(val)}%</span></div>
+        <div class="statbar"><i style="width:${clamp(val,0,100)}%; background:${color};"></i></div>
+      </div>`;
+    }
+    function render(){
+      const mood = hunger<25||energy<25 ? '😟' : happiness>70 ? '😄' : '🙂';
+      panel.innerHTML = `
+        <div style="text-align:center; margin-bottom:18px;">
+          <div style="font-size:64px;">${alive?mood:'💤'}</div>
+          <div style="color:var(--text-lo); font-size:13px;">Age: ${age} ticks · Coins: ${coins}🪙</div>
+        </div>
+        ${statBar('Hunger', hunger, 'var(--gold)')}
+        ${statBar('Happiness', happiness, 'var(--lime)')}
+        ${statBar('Energy', energy, 'var(--sky)')}
+        <div class="row" style="margin-top:18px;">
+          <button class="btn" id="feed">🍎 Feed</button>
+          <button class="btn secondary" id="play">🎾 Play</button>
+          <button class="btn secondary" id="sleep">😴 Sleep</button>
+        </div>
+        ${!alive ? '<p style="text-align:center; color:var(--coral); margin-top:14px;">Your pet needs a fresh start.</p>' : ''}
+      `;
+      if(!alive){
+        const btn=document.createElement('button');
+        btn.className='btn'; btn.textContent='New Pet'; btn.style.cssText='display:block; margin:10px auto 0;';
+        btn.addEventListener('click', reset);
+        panel.appendChild(btn);
+        return;
+      }
+      panel.querySelector('#feed').addEventListener('click', ()=>{ hunger=clamp(hunger+18,0,100); coins+=1; addGlobalScore(1); render(); });
+      panel.querySelector('#play').addEventListener('click', ()=>{ happiness=clamp(happiness+18,0,100); energy=clamp(energy-8,0,100); coins+=2; addGlobalScore(2); render(); });
+      panel.querySelector('#sleep').addEventListener('click', ()=>{ energy=clamp(energy+25,0,100); render(); });
+    }
+    function tick(){
+      if(!alive) return;
+      hunger=clamp(hunger-3,0,100);
+      happiness=clamp(happiness-2,0,100);
+      energy=clamp(energy-1.5,0,100);
+      age++;
+      if(hunger<=0 && happiness<=0){ alive=false; }
+      render();
+    }
+    function reset(){
+      hunger=70; happiness=70; energy=70; coins=10; alive=true; age=0;
+      render();
+    }
+    timer = setInterval(tick, 2500);
+    reset();
+    return ()=> clearInterval(timer);
+  }
+});
+
+/* =========================================================
+   GAME 15 — Tower Climb (timing platformer)
+   ========================================================= */
+registerGame('tower', {
+  title:'Tower Climb', icon:'🏗️', genre:'Platformer · Timing', accent:'var(--gold)',
+  init(container, setMeta){
+    const W=320,H=480;
+    const {wrap,canvas,ctx}=makeCanvas(W,H);
+    const overlay=makeOverlay(wrap);
+    container.appendChild(wrap);
+    const hint=document.createElement('p'); hint.className='hint';
+    hint.textContent='Tap / Space to jump onto moving platforms. Time it right to climb the tower!';
+    container.appendChild(hint);
+
+    let player, platforms, cameraY, alive, raf, level, best;
+    const gravity=0.4;
+
+    function genLevel(y, idx){
+      const w = 70;
+      const amp = rand(40, W-w-40);
+      return {x: W/2-w/2, baseX: W/2-w/2, y, w, h:14, t:rand(0,6.28), speed:0.02+idx*0.0015, range: Math.min(90, 30+idx*3)};
+    }
+    function reset(){
+      platforms=[{x:0,y:440,w:W,h:20,baseX:0,t:0,speed:0,range:0}];
+      let y=400;
+      for(let i=0;i<20;i++){ platforms.push(genLevel(y,i)); y-=58; }
+      player={x:W/2-10,y:400-30,w:20,h:20,vy:0,onGround:true};
+      cameraY=0; alive=true; level=0; best=0;
+      setMeta(`LEVEL <b>0</b>`);
+      hideOverlay(overlay);
+    }
+    function doJump(){
+      if(alive && player.onGround){ player.vy=-9; player.onGround=false; }
+    }
+    canvas.addEventListener('mousedown', doJump);
+    canvas.addEventListener('touchstart', e=>{e.preventDefault(); doJump();},{passive:false});
+    function key(e){ if(e.key===' '){ e.preventDefault(); doJump(); } }
+    window.addEventListener('keydown', key);
+
+    function step(){
+      if(alive){
+        platforms.forEach(p=>{
+          if(p.range>0){ p.t+=p.speed; p.x = clamp(p.baseX + Math.sin(p.t)*p.range, 0, W-p.w); }
+        });
+        player.vy += gravity;
+        player.y += player.vy;
+        player.onGround = false;
+        platforms.forEach(p=>{
+          if(player.vy>0 && player.x+player.w>p.x && player.x<p.x+p.w &&
+             player.y+player.h>p.y && player.y+player.h<p.y+p.h+player.vy+1){
+            player.y=p.y-player.h; player.vy=0; player.onGround=true;
+            const lvl = Math.max(0, Math.round((400-p.y)/58));
+            if(lvl>level){ level=lvl; setMeta(`LEVEL <b>${level}</b>`); }
+          }
+        });
+        if(player.y - cameraY < H*0.4) cameraY = player.y - H*0.4;
+        if(player.y - cameraY > H+40) die();
+        player.x = clamp(player.x, 0, W-player.w);
+      }
+      draw();
+      raf=requestAnimationFrame(step);
+    }
+    function die(){
+      if(!alive) return;
+      alive=false;
+      showOverlay(overlay,'Fell Off!', `You reached level ${level}.`, 'Play Again', reset);
+      addGlobalScore(level*3);
+    }
+    function draw(){
+      ctx.fillStyle='#100A1F'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#FFC857';
+      platforms.forEach(p=>{
+        const py = p.y-cameraY;
+        if(py>-20 && py<H+20) ctx.fillRect(p.x,py,p.w,p.h);
+      });
+      ctx.fillStyle='#FF5C72';
+      ctx.fillRect(player.x, player.y-cameraY, player.w, player.h);
+    }
+    reset();
+    raf=requestAnimationFrame(step);
+    return ()=>{ cancelAnimationFrame(raf); window.removeEventListener('keydown', key); };
+  }
+});
+
+/* =========================================================
+   GAME_REGISTRATIONS_GO_HERE
+   ========================================================= */
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+buildHub();
+</script>
+</body>
+</html>
